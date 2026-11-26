@@ -15,7 +15,7 @@ html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.55 "Hanken Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif}
 main{max-width:1120px;margin:0 auto;padding:20px 16px 56px}
 .hero{background:linear-gradient(135deg,#0B2E25 0%,#0F4A38 58%,#16684D 100%);color:#fff;border-radius:24px;padding:40px 32px 32px;margin-bottom:24px;box-shadow:var(--sh)}
-.theme-switch{display:flex;justify-content:flex-end;gap:6px;margin-bottom:22px}.theme-switch button{padding:7px 14px;font-size:.88rem;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.35);box-shadow:none}.theme-switch button[aria-pressed="true"]{background:#fff;color:#0B2E25}.theme-switch button:hover{transform:none}
+.paste-box{margin-top:18px;padding-top:18px;border-top:1px solid rgba(255,255,255,.2)}.paste-box label{display:block;font-weight:600;margin-bottom:8px}.paste-box textarea{display:block;width:100%;min-height:110px;resize:vertical;border:1px solid rgba(255,255,255,.35);border-radius:12px;padding:12px;background:rgba(255,255,255,.1);color:#fff;font:inherit}.paste-box textarea::placeholder{color:rgba(255,255,255,.65)}.paste-box button{margin-top:10px;background:#fff;color:#0B2E25}.paste-box .note{display:block;margin-top:8px;color:rgba(255,255,255,.72)}
 h1{font:600 clamp(2rem,5vw,2.9rem)/1.08 Fraunces,Georgia,"Times New Roman",serif;letter-spacing:-.02em;margin:0 0 12px}
 h2{font-size:1rem;font-weight:600;margin:0 0 16px}
 .lead{margin:0;max-width:56ch;color:rgba(255,255,255,.78);font-size:1.05rem}
@@ -63,6 +63,7 @@ summary{cursor:pointer;font-weight:600}.note{color:var(--mu);font-size:.92rem}
 <header class="hero"><div class="theme-switch" aria-label="Theme"><button id="light-theme" aria-pressed="true">White</button><button id="dark-theme" aria-pressed="false">Black</button></div><h1>Result Sheet Converter</h1>
 <p class="lead">Add DU tabulation sheets in any Excel format (.xlsx, .xls, .xlsm, .xlsb, .ods or .csv). The app reads each sheet’s first tab, builds the Info and Marks files, and shows a summary. Files stay in your browser.</p>
 <label class="drop"><input id="inp" type="file" accept=".xlsx,.xls,.xlsm,.xlsb,.ods,.csv" multiple><b>Choose result sheets</b><span>You can select several files at once. All will be combined into one Info file and one Marks file.</span></label>
+<div class="paste-box"><label for="paste">Or paste tabulation data</label><textarea id="paste" placeholder="Copy the tabulation cells from Excel and paste them here..."></textarea><button id="process-paste">Process pasted data</button><span class="note">Paste the complete tabulation, including the “Subject :” line and column headings.</span></div>
 <div id="files" hidden></div></header>
 <div id="out" hidden>
 <div class="btns"><button id="bi">Download Info.csv</button><button id="bm">Download Marks.csv</button><span id="dn" class="note" hidden>Downloads are not available in this view. Open the artifact in claude.ai to save files.</span></div>
@@ -217,6 +218,18 @@ async function save(kind){
 $('bi').onclick=()=>save('i');$('bm').onclick=()=>save('m');$('pbi').onclick=()=>save('i');$('pbm').onclick=()=>save('m');
 const setTheme=t=>{document.documentElement.dataset.theme=t;localStorage.setItem('theme',t);$('light-theme').setAttribute('aria-pressed',t==='light');$('dark-theme').setAttribute('aria-pressed',t==='dark')};
 $('light-theme').onclick=()=>setTheme('light');$('dark-theme').onclick=()=>setTheme('dark');setTheme(localStorage.getItem('theme')||'light');
+$('process-paste').onclick=()=>{
+  const text=$('paste').value.trim();if(!text){alert('Paste tabulation data first.');return}
+  const rows=text.replace(/\r\n?/g,'\n').split('\n').map(line=>line.split('\t'));
+  INFO=[];MARKS=[];WARN=[];const box=$('files');box.hidden=false;box.innerHTML='';
+  const p=document.createElement('p');
+  try{
+    const r=parse('Pasted Tabulation',XLSX.utils.aoa_to_sheet(rows),'Pasted Tabulation');
+    if(r.error){p.className='er';p.textContent='Pasted data: '+r.error}
+    else{INFO.push(...r.info);MARKS.push(...r.marks);WARN.push(...r.warn);p.className='ok';p.textContent='Pasted data: '+r.subj+', '+r.info.length+' students, '+r.marks.length+' mark rows'}
+  }catch(err){p.className='er';p.textContent='Pasted data: could not read this data ('+err.message+')'}
+  box.appendChild(p);if(INFO.length)render([{name:'Pasted Tabulation'}]);else $('out').hidden=true;
+};
 $('inp').onchange=async e=>{
   const fs=[...e.target.files];if(!fs.length)return;
   INFO=[];MARKS=[];WARN=[];const box=$('files');box.hidden=false;box.innerHTML='';
