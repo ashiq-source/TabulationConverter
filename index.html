@@ -109,7 +109,7 @@ function parse(fn,ws,sheetName){
   const hdr=rows.findIndex(r=>r.some(c=>typeof c==='string'&&c.trim().startsWith('Paper Code:')));
   if(hdr<0)return{error:'No header row with “Paper Code:” found.'};
   let subj=null;
-  for(let i=0;i<=hdr;i++)for(const c of rows[i])if(typeof c==='string'&&c.trim().startsWith('Subject :'))subj=c.split(':')[1].trim();
+  for(let i=0;i<=hdr;i++)for(const c of rows[i])if(typeof c==='string'&&c.trim().startsWith('Subject :'))subj=c.split(':').slice(1).join(':').replace(/\s*\([^)]*\)\s*$/,'').trim();
   if(!subj){
     const hay=(sheetName+' '+fn).replace(/_/g,' ');
     const hits=Object.keys(SUBJ).filter(s=>new RegExp('\\b'+s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i').test(hay));
