@@ -95,6 +95,7 @@ const norm=v=>String(v??'').replace(/\s+/g,' ').trim();
 const sessionOf=v=>{const s=norm(v),m=s.match(/\b\d{4}\s*[-/]\s*(\d{2}|\d{4})\b/);return m?(m[1].length===4?m[1].slice(-2):m[1].padStart(2,'0')):s};
 const isN=v=>typeof v==='number';
 const num=v=>{if(v==null)return null;if(isN(v))return v;const s=String(v).trim();if(s==='')return null;const f=Number(s);return Number.isNaN(f)?s:f};
+const cgpaOf=v=>{const n=num(v);return typeof n==='number'?n.toFixed(2):n};
 const isAb=v=>typeof v==='string'&&['ab','abs'].includes(v.trim().toLowerCase());
 const gradeOf=t=>{for(const[lo,g]of[[80,'A+'],[75,'A'],[70,'A-'],[65,'B+'],[60,'B'],[55,'B-'],[50,'C+'],[45,'C'],[40,'D']])if(t>=lo)return g;return 'F'};
 let INFO=[],MARKS=[],WARN=[],dl=null,view='i';
@@ -133,7 +134,7 @@ function parse(fn,ws,sheetName){
     const col=num(r[0]),reg=num(r[cC]),ses=sessionOf(r[cS]),key=sc+'|'+roll+'|'+reg;
     if(seen.has(key))warn.push(fn+' row '+(i+1)+': duplicate roll '+roll);seen.add(key);
     const res=cX>=0?r[cX]:null;
-    info.push([col,sc,reg,ses,roll,norm(name),TYPE[typ],cG>=0?num(r[cG]):null,res==null||res===''?null:norm(res)]);
+    info.push([col,sc,reg,ses,roll,norm(name),TYPE[typ],cG>=0?cgpaOf(r[cG]):null,res==null||res===''?null:norm(res)]);
     const app=new Set(String(r[cA]||'').split(/\s+/).filter(Boolean)),got=new Set();
     blocks.forEach(([pc,c0],bi)=>{
       const lab={};for(let c=c0;c<ends[bi];c++){const v=rows[sub][c];if(v!=null&&v!=='')lab[norm(v)]=c}
@@ -174,7 +175,7 @@ const tbl=(h,rs,rc=[])=>'<tr>'+h.map((x,i)=>'<th class="'+(rc.includes(i)?'r':''
 
 function render(files){
   const n=INFO.length,subs=[...new Set(INFO.map(r=>r[1]))].map(s=>SN[s]);
-  const cg=INFO.map(r=>r[7]).filter(isN),avg=cg.length?(cg.reduce((a,b)=>a+b,0)/cg.length).toFixed(2):'–';
+  const cg=INFO.map(r=>Number(r[7])).filter(Number.isFinite),avg=cg.length?(cg.reduce((a,b)=>a+b,0)/cg.length).toFixed(2):'–';
   $('kpi').innerHTML=[[n,'Students'],[MARKS.length,'Mark rows'],[subs.join(', ')||'–','Subject'],[avg,'Average CGPA ('+cg.length+' students)'],[WARN.length,'Items to check']].map(([a,b])=>'<div><strong>'+esc(a)+'</strong><span>'+esc(b)+'</span></div>').join('');
   const rs=cnt(INFO,r=>r[8]||'No result yet');
   const col={Passed:'var(--ac)',Failed:'var(--bad)',Absent:'var(--wn)'},rl=[...rs].sort((a,b)=>b[1]-a[1]);let acc=0;
