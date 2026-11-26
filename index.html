@@ -39,8 +39,9 @@ h2{font-size:1rem;font-weight:600;margin:0 0 16px}
 .bar i{display:block;height:10px;border-radius:999px;background:var(--ac);min-width:3px}
 .bar.f i{background:var(--bad)}.bar.a i{background:var(--wn)}.bar.n i{background:var(--mu)}
 .bar em{font-style:normal;text-align:right;font-variant-numeric:tabular-nums}
-.tw{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:.92rem;font-variant-numeric:tabular-nums}
+.tw{overflow-x:auto}#preview-wrap{max-height:60vh;overflow:auto;border:1px solid var(--ln);border-radius:12px}#preview-wrap table{margin:0}#preview-wrap th{position:sticky;top:0;background:var(--sf);z-index:1}table{border-collapse:collapse;width:100%;font-size:.92rem;font-variant-numeric:tabular-nums}
 th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--ln);white-space:nowrap}th{color:var(--mu);font-weight:600;font-size:.86rem}
+.preview-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}.preview-actions{display:flex;gap:8px;flex-wrap:wrap}.preview-actions button{padding:8px 16px;font-size:.9rem}
 tr:last-child td{border-bottom:0}tr:hover td{background:var(--bg)}td.r,th.r{text-align:right}
 .btns{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:20px}
 button{font:inherit;font-weight:600;border:0;background:var(--ac);color:var(--on);border-radius:999px;padding:11px 24px;cursor:pointer;box-shadow:0 8px 18px -10px var(--ac);transition:transform .15s,filter .15s}
@@ -73,9 +74,9 @@ summary{cursor:pointer;font-weight:600}.note{color:var(--mu);font-size:.92rem}
 <div class="card"><h2>Papers</h2><div class="tw"><table id="t-pap"></table></div></div>
 <div class="card"><h2>Colleges</h2><div class="tw"><table id="t-col"></table></div></div>
 <details class="card" id="wbox"><summary id="wsum"></summary><ul class="warn" id="wl"></ul></details>
-<div class="card"><h2>Preview (first 100 rows)</h2>
+<div class="card"><div class="preview-head"><h2>Preview (all rows)</h2><div class="preview-actions"><button id="pbi">Download Info.csv</button><button id="pbm">Download Marks.csv</button></div></div>
 <div class="tabs"><button class="alt" id="pi" aria-pressed="true">Info</button><button class="alt" id="pm" aria-pressed="false">Marks</button></div>
-<div class="tw"><table id="t-pre"></table></div></div>
+<div id="preview-wrap"><table id="t-pre"></table></div></div>
 </div>
 </main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -195,7 +196,7 @@ function render(files){
 }
 function preview(){
   $('pi').setAttribute('aria-pressed',view==='i');$('pm').setAttribute('aria-pressed',view==='m');
-  $('t-pre').innerHTML=view==='i'?tbl(HI,INFO.slice(0,100)):tbl(HM,MARKS.slice(0,100));
+  $('t-pre').innerHTML=view==='i'?tbl(HI,INFO):tbl(HM,MARKS);
 }
 $('pi').onclick=()=>{view='i';preview()};$('pm').onclick=()=>{view='m';preview()};
 async function save(kind){
@@ -204,7 +205,7 @@ async function save(kind){
   try{await dl.save({filename:pre+(i?'Info':'Marks')+'.csv',data:'\ufeff'+csv(i?HI:HM,i?INFO:MARKS)})}
   catch(e){if(e&&e.code!=='declined')alert('Could not save the file ('+(e.code||e.message)+').')}
 }
-$('bi').onclick=()=>save('i');$('bm').onclick=()=>save('m');
+$('bi').onclick=()=>save('i');$('bm').onclick=()=>save('m');$('pbi').onclick=()=>save('i');$('pbm').onclick=()=>save('m');
 $('inp').onchange=async e=>{
   const fs=[...e.target.files];if(!fs.length)return;
   INFO=[];MARKS=[];WARN=[];const box=$('files');box.hidden=false;box.innerHTML='';
