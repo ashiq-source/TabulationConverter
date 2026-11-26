@@ -124,7 +124,12 @@ function parse(fn,ws,sheetName){
   const cC=find(/^(du )?regi(\.|stration)( no\.?)?$/i),cS=find(/^session$/i),cR=find(/^(exam\. )?roll( no\.)?$/i),cN=find(/^name of examinee$/i),cT=find(/^(regular\/ ?irregular|type)$/i),cA=find(/^appearing paper/i),cG=find(/^gpa$/i),cX=find(/^results$/i);
   const miss=[['Registration',cC],['Session',cS],['Roll',cR],['Name',cN],['Type',cT],['Appearing Paper',cA]].filter(x=>x[1]<0).map(x=>x[0]);
   if(miss.length)return{error:'Missing columns: '+miss.join(', ')};
-  const blocks=H.filter(([n])=>isPaperCode(n)).map(([n,c])=>[paperCodeOf(n),c]).sort((a,b)=>a[1]-b[1]);
+  const codePart=/^(in[- ]?course|course final|total|grade|grade point|results|total grade point earned|paper code)/i;
+  const blocks=H.filter(([n])=>isPaperCode(n)).map(([n,c])=>{
+    let code=paperCodeOf(n),i=H.findIndex(x=>x[1]===c)+1;
+    while(i<H.length&&H[i][1]===H[i-1][1]+1&&!codePart.test(H[i][0])){code=norm(code+' '+H[i][0]);i++}
+    return[code,c];
+  }).sort((a,b)=>a[1]-b[1]);
   const tail=Math.min(...H.filter(([n])=>/^(Total Grade Point Earned|Results)$/i.test(n)).map(x=>x[1]));
   const ends=blocks.slice(1).map(b=>b[1]).concat([tail]);
   const sub=hdr+3;let priv=0;
