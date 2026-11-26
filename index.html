@@ -146,17 +146,16 @@ function parse(fn,ws,sheetName){
     const appText=norm(r[cA]||'').toLowerCase(),got=new Set(),isListed=pc=>{const p=norm(pc).toLowerCase();return p&&new RegExp('(^|[^a-z0-9])'+p.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'($|[^a-z0-9])','i').test(appText)};
     blocks.forEach(([pc,c0],bi)=>{
       const lab={};for(let c=c0;c<ends[bi];c++){const v=rows[sub][c];if(v!=null&&v!=='')lab[norm(v)]=c}
-      const g=l=>l in lab?r[lab[l]]:null;
+      const g=l=>l in lab?r[lab[l]]:null,gLike=rx=>{const k=Object.keys(lab).find(x=>rx.test(x));return k==null?null:r[lab[k]]};
       if(Object.keys(lab).every(l=>g(l)==null||g(l)===''))return;
-      const th='In-course 20' in lab;let inc,fin,tot,gr,gp;
+      const th=Object.keys(lab).some(l=>/^in[- ]?course\s*20$/i.test(l));let inc,fin,tot,gr,gp;
       if(th){
-        inc=g('In-course 20');fin=g('Course Final 80');tot=g('Total 100');gr=g('Grade');gp=g('Grade Point');
+        inc=gLike(/^in[- ]?course\s*20$/i);fin=gLike(/^course\s*final\s*80$/i);tot=gLike(/^total(?:\s+(?:marks?|100))?$/i);gr=gLike(/^grade$/i);gp=gLike(/^grade\s*point$/i);
         if(isAb(inc)){warn.push(fn+' roll '+roll+' '+pc+': incourse was Ab, left blank');inc=null}
         if(isAb(fin))fin=null;
         inc=num(inc);fin=num(fin);tot=num(tot);gp=gradePointOf(gp);
       }else{
-        const mk=Object.keys(lab).find(k=>k.startsWith('Marks'));
-        tot=g(mk);gr=g('Grade');gp=gradePointOf(g('Grade Point'));
+        tot=gLike(/^(?:marks?(?:\s+\d+)?|total(?:\s+(?:marks?|100))?)$/i);gr=gLike(/^grade$/i);gp=gradePointOf(gLike(/^grade\s*point$/i));
         tot=(isAb(tot)||tot==='')?null:num(tot);
       }
       gr=gr==null||gr===''?null:norm(gr);
