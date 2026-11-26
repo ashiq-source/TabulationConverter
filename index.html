@@ -124,8 +124,8 @@ function parse(fn,ws,sheetName){
   const sc=SUBJ[subj];
   const H=rows[hdr].map((c,i)=>[norm(c),i]).filter(x=>x[0]);
   const find=rx=>{const h=H.find(([n])=>rx.test(n));return h?h[1]:-1};
-  const cC=find(/^(du )?regi(\.|stration)( no\.?)?$/i),cS=find(/^session$/i),cR=find(/^(exam\. )?roll( no\.?)?$/i),cN=find(/^(name( of examinee)?|full name)$/i),cT=find(/^(regular\/? ?irregular|student\s+type|type|improvement)$/i),cA=find(/^appearing paper/i),cG=find(/^gpa$/i),cX=find(/^results$/i);
-  const miss=[['Registration',cC],['Session',cS],['Roll',cR],['Name',cN],['Type',cT],['Appearing Paper',cA]].filter(x=>x[1]<0).map(x=>x[0]);
+  const cC=find(/^(du )?regi(\.|stration)( no\.?)?$/i),cS=find(/^session$/i),cR=find(/^(exam\. )?roll( no\.?)?$/i),cN=find(/^(name( of examinee)?|full name)$/i),cT=find(/^(regular\/? ?irregular|student\s+type|type|improvement)$/i),cA=find(/^appearing papers?/i),cG=find(/^(gpa|cgpa)$/i),cX=find(/^results?$/i);
+  const miss=[['Registration',cC],['Session',cS],['Roll',cR],['Name',cN],['Type',cT]].filter(x=>x[1]<0).map(x=>x[0]);
   if(miss.length)return{error:'Missing columns: '+miss.join(', ')};
   const codePart=/^(in[- ]?course|course final|total|grade|grade point|results|total grade point earned|paper code)/i;
   const blocks=H.filter(([n])=>isPaperCode(n)).map(([n,c])=>{
@@ -139,14 +139,14 @@ function parse(fn,ws,sheetName){
   for(let i=hdr+4;i<rows.length;i++){
     const r=rows[i],roll=num(r[cR]),name=r[cN];let typ=r[cT];
     if(roll==null||name==null||typ==null)continue;
-    typ=norm(typ);
-    if(!(typ in TYPE)){warn.push(fn+' row '+(i+1)+': unknown student type “'+typ+'”, row skipped');continue}
+    typ=norm(typ);const typeKey=Object.keys(TYPE).find(k=>k.toLowerCase()===typ.toLowerCase());
+    if(!typeKey){warn.push(fn+' row '+(i+1)+': unknown student type “'+typ+'”, row skipped');continue}typ=typeKey;
     if(typ==='Private Regular')priv++;
     const col=num(r[0]),reg=num(r[cC]),ses=sessionOf(r[cS]),key=sc+'|'+roll+'|'+reg;
     if(seen.has(key))warn.push(fn+' row '+(i+1)+': duplicate roll '+roll);seen.add(key);
     const res=cX>=0?r[cX]:null;
     info.push([col,sc,reg,ses,roll,norm(name),TYPE[typ],cG>=0?cgpaOf(r[cG]):null,res==null||res===''?null:norm(res)]);
-    const appText=norm(r[cA]||'').toLowerCase(),got=new Set(),isListed=pc=>{const p=norm(pc).toLowerCase();return p&&new RegExp('(^|[^a-z0-9])'+p.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'($|[^a-z0-9])','i').test(appText)};
+    const appText=cA<0?'':norm(r[cA]||'').toLowerCase(),got=new Set(),isListed=pc=>{if(cA<0)return true;const p=norm(pc).toLowerCase();return p&&new RegExp('(^|[^a-z0-9])'+p.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'($|[^a-z0-9])','i').test(appText)};
     blocks.forEach(([pc,c0],bi)=>{
       const lab={};for(let c=c0;c<ends[bi];c++){const v=rows[sub][c];if(v!=null&&v!=='')lab[norm(v)]=c}
       const g=l=>l in lab?r[lab[l]]:null,gLike=rx=>{const k=Object.keys(lab).find(x=>rx.test(x));return k==null?null:r[lab[k]]};
