@@ -151,14 +151,15 @@ function parse(fn,ws,sheetName){
       const lab={};for(let c=c0;c<ends[bi];c++){const v=rows[sub][c];if(v!=null&&v!=='')lab[norm(v)]=c}
       const g=l=>l in lab?r[lab[l]]:null,gLike=rx=>{const k=Object.keys(lab).find(x=>rx.test(x));return k==null?null:r[lab[k]]};
       if(Object.keys(lab).every(l=>g(l)==null||g(l)===''))return;
-      const th=Object.keys(lab).some(l=>/^in[- ]?course\s*20$/i.test(l));let inc,fin,tot,gr,gp;
+      const incRx=/^in[\s-]*course(?:\s*(?:20|marks?))?$/i,finRx=/^course[\s-]*final(?:\s*(?:80|marks?))?$/i,totalRx=/^(?:total(?:\s*(?:marks?|100))?|marks?(?:\s*[([]?\d+[)]]?)?)$/i,gradeRx=/^grade$/i,gpRx=/^grade[\s-]*points?$/i;
+      const th=Object.keys(lab).some(l=>incRx.test(l));let inc,fin,tot,gr,gp;
       if(th){
-        inc=gLike(/^in[- ]?course\s*20$/i);fin=gLike(/^course\s*final\s*80$/i);tot=gLike(/^total(?:\s+(?:marks?|100))?$/i);gr=gLike(/^grade$/i);gp=gLike(/^grade\s*point$/i);
+        inc=gLike(incRx);fin=gLike(finRx);tot=gLike(totalRx);gr=gLike(gradeRx);gp=gLike(gpRx);
         if(isAb(inc)){warn.push(fn+' roll '+roll+' '+pc+': incourse was Ab, left blank');inc=null}
         if(isAb(fin))fin=null;
         inc=num(inc);fin=num(fin);tot=num(tot);gp=gradePointOf(gp);
       }else{
-        tot=gLike(/^(?:marks?(?:\s+\d+)?|total(?:\s+(?:marks?|100))?)$/i);gr=gLike(/^grade$/i);gp=gradePointOf(gLike(/^grade\s*point$/i));
+        tot=gLike(totalRx);gr=gLike(gradeRx);gp=gradePointOf(gLike(gpRx));
         tot=(isAb(tot)||tot==='')?null:num(tot);
       }
       gr=gr==null||gr===''?null:norm(gr);
