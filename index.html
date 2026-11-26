@@ -84,6 +84,7 @@ summary{cursor:pointer;font-weight:600}.note{color:var(--mu);font-size:.92rem}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 const SUBJ={'Bangla':10,'English':11,'Arabic':12,'History':15,'Islamic H&C':16,'Philosophy':17,'Islamic Studies':18,'Political Science':19,'Sociology':20,'Social Work':21,'Economics':22,'Marketing':23,'Finance & Banking':24,'Accounting':25,'Management':26,'Physics':27,'Chemistry':28,'Botany':30,'Zoology':31,'Geography':32,'Soil Science':33,'Psychology':34,'Home Economics':35,'Statistics':36,'Mathematics':37};
+const SUBJECT_ALIASES={'Islamic History and Culture':'Islamic H&C'};
 const TYPE={'Regular':1,'Irregular':2,'Improvement':3,'Private':4,'Private Irregular':5,'Private Improvement':6,'Private Regular':4};
 const TN={1:'Regular',2:'Irregular',3:'Improvement',4:'Private',5:'Private Irregular',6:'Private Improvement'};
 const SN=Object.fromEntries(Object.entries(SUBJ).map(([k,v])=>[v,k]));
@@ -113,10 +114,11 @@ function parse(fn,ws,sheetName){
   for(let i=0;i<=hdr;i++)for(const c of rows[i])if(typeof c==='string'&&c.trim().startsWith('Subject :'))subj=c.split(':').slice(1).join(':').replace(/\s*\([^)]*\)\s*$/,'').trim();
   if(!subj){
     const hay=(sheetName+' '+fn).replace(/_/g,' ');
-    const hits=Object.keys(SUBJ).filter(s=>new RegExp('\\b'+s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i').test(hay));
+    const hits=[...Object.keys(SUBJ),...Object.keys(SUBJECT_ALIASES)].filter(s=>new RegExp('\\b'+s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i').test(hay));
     if(hits.length!==1)return{error:'Cannot tell the subject (found '+(hits.join(', ')||'none')+'). Add a “Subject :” line or rename the sheet.'};
     subj=hits[0];warn.push(fn+': subject taken from sheet or file name → '+subj);
   }
+  const alias=Object.keys(SUBJECT_ALIASES).find(a=>a.toLowerCase()===subj.toLowerCase());if(alias)subj=SUBJECT_ALIASES[alias];
   if(!(subj in SUBJ))return{error:'Subject “'+subj+'” is not in the code list.'};
   const sc=SUBJ[subj];
   const H=rows[hdr].map((c,i)=>[norm(c),i]).filter(x=>x[0]);
