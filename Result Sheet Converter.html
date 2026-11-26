@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Result Sheet Converter</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600&family=Fraunces:opsz,wght@9..144,600&display=swap">
+<style>
+:root{--bg:#F5F7F6;--sf:#fff;--tx:#0E1F1A;--mu:#5E6B66;--ln:#E2E8E5;--ac:#0B6B4F;--on:#fff;--bad:#B4372F;--wn:#B8892B;--sh:0 1px 2px rgba(10,30,22,.05),0 12px 28px -14px rgba(10,30,22,.18);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0A1512;--sf:#101E19;--tx:#E8F1ED;--mu:#8FA59C;--ln:#22362E;--ac:#3FD0A0;--on:#062018;--bad:#F08A80;--wn:#E0B454;--sh:0 1px 0 rgba(255,255,255,.04),0 12px 28px -14px rgba(0,0,0,.65);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0A1512;--sf:#101E19;--tx:#E8F1ED;--mu:#8FA59C;--ln:#22362E;--ac:#3FD0A0;--on:#062018;--bad:#F08A80;--wn:#E0B454;--sh:0 1px 0 rgba(255,255,255,.04),0 12px 28px -14px rgba(0,0,0,.65);color-scheme:dark}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*:before,*:after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.55 "Hanken Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1120px;margin:0 auto;padding:20px 16px 56px}
+.hero{background:linear-gradient(135deg,#0B2E25 0%,#0F4A38 58%,#16684D 100%);color:#fff;border-radius:24px;padding:40px 32px 32px;margin-bottom:24px;box-shadow:var(--sh)}
+h1{font:600 clamp(2rem,5vw,2.9rem)/1.08 Fraunces,Georgia,"Times New Roman",serif;letter-spacing:-.02em;margin:0 0 12px}
+h2{font-size:1rem;font-weight:600;margin:0 0 16px}
+.lead{margin:0;max-width:56ch;color:rgba(255,255,255,.78);font-size:1.05rem}
+.drop{display:block;margin-top:26px;border:1px dashed rgba(255,255,255,.4);border-radius:16px;padding:26px 20px;text-align:center;cursor:pointer;background:rgba(255,255,255,.08);transition:background .15s,border-color .15s}
+.drop:hover,.drop:focus-within{background:rgba(255,255,255,.15);border-color:#fff}
+.drop input{position:absolute;opacity:0;width:1px;height:1px}
+.drop b{display:block;font-size:1.15rem;margin-bottom:2px}.drop span{color:rgba(255,255,255,.72);font-size:.95rem}
+#files{margin-top:16px}#files p{margin:4px 0 0;font-size:.92rem}.hero .ok{color:#8BE9C6}.hero .er{color:#FFB9AF}
+.card{background:var(--sf);border:1px solid var(--ln);border-radius:18px;padding:22px;margin-bottom:20px;box-shadow:var(--sh)}
+.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px;margin-bottom:20px}
+.kpi div{background:var(--sf);border:1px solid var(--ln);border-radius:18px;padding:16px 18px;box-shadow:var(--sh)}
+.kpi strong{display:block;font:600 2.1rem/1.1 Fraunces,Georgia,serif;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.kpi span{color:var(--mu);font-size:.9rem}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}.cols .card{margin-bottom:0}.cols+.card{margin-top:20px}
+.res{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+.donut{width:150px;height:150px;border-radius:50%;display:grid;place-items:center;flex:none}
+.donut div{width:106px;height:106px;border-radius:50%;background:var(--sf);display:grid;place-content:center;text-align:center}
+.donut strong{font:600 1.7rem/1 Fraunces,Georgia,serif}.donut span{font-size:.78rem;color:var(--mu)}
+.lg{list-style:none;margin:0;padding:0;flex:1;min-width:130px}.lg li{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:.95rem}
+.lg b{margin-left:auto;font-variant-numeric:tabular-nums}.dot{width:10px;height:10px;border-radius:50%;flex:none}
+.bar{display:grid;grid-template-columns:140px 1fr 44px;align-items:center;gap:10px;margin:9px 0;font-size:.92rem}
+.bar>div{background:var(--bg);border-radius:999px;height:10px;overflow:hidden}
+.bar i{display:block;height:10px;border-radius:999px;background:var(--ac);min-width:3px}
+.bar.f i{background:var(--bad)}.bar.a i{background:var(--wn)}.bar.n i{background:var(--mu)}
+.bar em{font-style:normal;text-align:right;font-variant-numeric:tabular-nums}
+.tw{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:.92rem;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--ln);white-space:nowrap}th{color:var(--mu);font-weight:600;font-size:.86rem}
+tr:last-child td{border-bottom:0}tr:hover td{background:var(--bg)}td.r,th.r{text-align:right}
+.btns{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:20px}
+button{font:inherit;font-weight:600;border:0;background:var(--ac);color:var(--on);border-radius:999px;padding:11px 24px;cursor:pointer;box-shadow:0 8px 18px -10px var(--ac);transition:transform .15s,filter .15s}
+button:hover{filter:brightness(1.1);transform:translateY(-1px)}
+button:focus-visible,summary:focus-visible{outline:3px solid var(--wn);outline-offset:3px}
+.tabs{display:inline-flex;gap:2px;padding:3px;margin-bottom:14px;background:var(--bg);border:1px solid var(--ln);border-radius:999px}
+.tabs button{background:transparent;color:var(--mu);box-shadow:none;padding:7px 20px}.tabs button:hover{transform:none;filter:none;color:var(--tx)}
+.tabs button[aria-pressed="true"]{background:var(--sf);color:var(--tx);box-shadow:var(--sh)}
+.warn{max-height:260px;overflow:auto;font-size:.9rem;color:var(--mu);padding-left:20px;margin:12px 0 0}
+summary{cursor:pointer;font-weight:600}.note{color:var(--mu);font-size:.92rem}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}button:hover{transform:none}}
+@media (max-width:520px){.hero{padding:28px 20px 22px;border-radius:20px}.bar{grid-template-columns:110px 1fr 40px}}
+</style>
+</head>
+<body>
+<main>
+<header class="hero"><h1>Result Sheet Converter</h1>
+<p class="lead">Add DU tabulation sheets in any Excel format (.xlsx, .xls, .xlsm, .xlsb, .ods or .csv). The app reads each sheet’s first tab, builds the Info and Marks files, and shows a summary. Files stay in your browser.</p>
+<label class="drop"><input id="inp" type="file" accept=".xlsx,.xls,.xlsm,.xlsb,.ods,.csv" multiple><b>Choose result sheets</b><span>You can select several files at once. All will be combined into one Info file and one Marks file.</span></label>
+<div id="files" hidden></div></header>
+<div id="out" hidden>
+<div class="btns"><button id="bi">Download Info.csv</button><button id="bm">Download Marks.csv</button><span id="dn" class="note" hidden>Downloads are not available in this view. Open the artifact in claude.ai to save files.</span></div>
+<div id="kpi" class="kpi"></div>
+<div class="cols">
+<div class="card"><h2>Results</h2><div id="c-res"></div></div>
+<div class="card"><h2>Student types</h2><div id="c-typ"></div></div>
+<div class="card"><h2>Paper grades</h2><div id="c-gr"></div></div>
+</div>
+<div class="card"><h2>Papers</h2><div class="tw"><table id="t-pap"></table></div></div>
+<div class="card"><h2>Colleges</h2><div class="tw"><table id="t-col"></table></div></div>
+<details class="card" id="wbox"><summary id="wsum"></summary><ul class="warn" id="wl"></ul></details>
+<div class="card"><h2>Preview (first 100 rows)</h2>
+<div class="tabs"><button class="alt" id="pi" aria-pressed="true">Info</button><button class="alt" id="pm" aria-pressed="false">Marks</button></div>
+<div class="tw"><table id="t-pre"></table></div></div>
+</div>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const SUBJ={'Bangla':10,'English':11,'Arabic':12,'History':15,'Islamic H&C':16,'Philosophy':17,'Islamic Studies':18,'Political Science':19,'Sociology':20,'Social Work':21,'Economics':22,'Marketing':23,'Finance & Banking':24,'Accounting':25,'Management':26,'Physics':27,'Chemistry':28,'Botany':30,'Zoology':31,'Geography':32,'Soil Science':33,'Psychology':34,'Home Economics':35,'Statistics':36,'Mathematics':37};
+const TYPE={'Regular':1,'Irregular':2,'Improvement':3,'Private':4,'Private Irregular':5,'Private Improvement':6,'Private Regular':4};
+const TN={1:'Regular',2:'Irregular',3:'Improvement',4:'Private',5:'Private Irregular',6:'Private Improvement'};
+const SN=Object.fromEntries(Object.entries(SUBJ).map(([k,v])=>[v,k]));
+const GR=['A+','A','A-','B+','B','B-','C+','C','D','F','Abs'];
+const HI=['College','Subject','Registration','Session','Roll','Name','Student Type','CGPA','Result'];
+const HM=['College','Subject','Registration','Session','Roll','Paper Code','Incourse Marks','Course Final Marks','Total Marks','Grade','Grade Point'];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm=v=>String(v??'').replace(/\s+/g,' ').trim();
+const isN=v=>typeof v==='number';
+const num=v=>{if(v==null)return null;if(isN(v))return v;const s=String(v).trim();if(s==='')return null;const f=Number(s);return Number.isNaN(f)?s:f};
+const isAb=v=>typeof v==='string'&&['ab','abs'].includes(v.trim().toLowerCase());
+const gradeOf=t=>{for(const[lo,g]of[[80,'A+'],[75,'A'],[70,'A-'],[65,'B+'],[60,'B'],[55,'B-'],[50,'C+'],[45,'C'],[40,'D']])if(t>=lo)return g;return 'F'};
+let INFO=[],MARKS=[],WARN=[],dl=null,view='i';
+
+function parse(fn,ws,sheetName){
+  const warn=[],info=[],marks=[],seen=new Set();
+  const rg=XLSX.utils.decode_range(ws['!ref']);
+  const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null,blankrows:true,range:'A1:'+XLSX.utils.encode_cell(rg.e)});
+  const hdr=rows.findIndex(r=>r.some(c=>typeof c==='string'&&c.trim().startsWith('Paper Code:')));
+  if(hdr<0)return{error:'No header row with “Paper Code:” found.'};
+  let subj=null;
+  for(let i=0;i<=hdr;i++)for(const c of rows[i])if(typeof c==='string'&&c.trim().startsWith('Subject :'))subj=c.split(':')[1].trim();
+  if(!subj){
+    const hay=(sheetName+' '+fn).replace(/_/g,' ');
+    const hits=Object.keys(SUBJ).filter(s=>new RegExp('\\b'+s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i').test(hay));
+    if(hits.length!==1)return{error:'Cannot tell the subject (found '+(hits.join(', ')||'none')+'). Add a “Subject :” line or rename the sheet.'};
+    subj=hits[0];warn.push(fn+': subject taken from sheet or file name → '+subj);
+  }
+  if(!(subj in SUBJ))return{error:'Subject “'+subj+'” is not in the code list.'};
+  const sc=SUBJ[subj];
+  const H=rows[hdr].map((c,i)=>[norm(c),i]).filter(x=>x[0]);
+  const find=rx=>{const h=H.find(([n])=>rx.test(n));return h?h[1]:-1};
+  const cC=find(/^(du )?regi(\.|stration)( no\.?)?$/i),cS=find(/^session$/i),cR=find(/^(exam\. )?roll( no\.)?$/i),cN=find(/^name of examinee$/i),cT=find(/^(regular\/ ?irregular|type)$/i),cA=find(/^appearing paper/i),cG=find(/^gpa$/i),cX=find(/^results$/i);
+  const miss=[['Registration',cC],['Session',cS],['Roll',cR],['Name',cN],['Type',cT],['Appearing Paper',cA]].filter(x=>x[1]<0).map(x=>x[0]);
+  if(miss.length)return{error:'Missing columns: '+miss.join(', ')};
+  const blocks=H.filter(([n])=>n.startsWith('Paper Code:')).map(([n,c])=>[n.replace(/^Paper Code:\s*/,'').split(' ')[0],c]).sort((a,b)=>a[1]-b[1]);
+  const tail=Math.min(...H.filter(([n])=>/^(Total Grade Point Earned|Results)$/i.test(n)).map(x=>x[1]));
+  const ends=blocks.slice(1).map(b=>b[1]).concat([tail]);
+  const sub=hdr+3;let priv=0;
+  for(let i=hdr+4;i<rows.length;i++){
+    const r=rows[i],roll=num(r[cR]),name=r[cN];let typ=r[cT];
+    if(roll==null||name==null||typ==null)continue;
+    typ=norm(typ);
+    if(!(typ in TYPE)){warn.push(fn+' row '+(i+1)+': unknown student type “'+typ+'”, row skipped');continue}
+    if(typ==='Private Regular')priv++;
+    const col=num(r[0]),reg=num(r[cC]),ses=norm(r[cS]),key=sc+'|'+roll+'|'+reg;
+    if(seen.has(key))warn.push(fn+' row '+(i+1)+': duplicate roll '+roll);seen.add(key);
+    const res=cX>=0?r[cX]:null;
+    info.push([col,sc,reg,ses,roll,norm(name),TYPE[typ],cG>=0?num(r[cG]):null,res==null||res===''?null:norm(res)]);
+    const app=new Set(String(r[cA]||'').split(/\s+/).filter(Boolean)),got=new Set();
+    blocks.forEach(([pc,c0],bi)=>{
+      const lab={};for(let c=c0;c<ends[bi];c++){const v=rows[sub][c];if(v!=null&&v!=='')lab[norm(v)]=c}
+      const g=l=>l in lab?r[lab[l]]:null;
+      if(Object.keys(lab).every(l=>g(l)==null||g(l)===''))return;
+      const th='In-course 20' in lab;let inc,fin,tot,gr,gp;
+      if(th){
+        inc=g('In-course 20');fin=g('Course Final 80');tot=g('Total 100');gr=g('Grade');gp=g('Grade Point');
+        if(isAb(inc)){warn.push(fn+' roll '+roll+' '+pc+': incourse was Ab, left blank');inc=null}
+        if(isAb(fin))fin=null;
+        inc=num(inc);fin=num(fin);tot=num(tot);gp=num(gp);
+      }else{
+        const mk=Object.keys(lab).find(k=>k.startsWith('Marks'));
+        tot=g(mk);gr=g('Grade');gp=num(g('Grade Point'));
+        tot=(isAb(tot)||tot==='')?null:num(tot);
+      }
+      gr=gr==null||gr===''?null:norm(gr);
+      if(!th){inc=fin=(tot!=null||gr!=null)?0:null}
+      const real=th?(isN(fin)||isN(inc)):isN(tot);
+      if(!app.has(pc)&&!real){warn.push(fn+' roll '+roll+' '+pc+': only stray cells and paper not in Appearing list, dropped');return}
+      if(!app.has(pc))warn.push(fn+' roll '+roll+' '+pc+': has marks but paper not in Appearing list, kept');
+      if(th&&isN(inc)&&isN(fin)&&isN(tot)&&inc+fin!==tot)warn.push(fn+' roll '+roll+' '+pc+': '+inc+'+'+fin+' is not '+tot);
+      if(th&&isN(tot)&&gr&&gr!=='Abs'&&gradeOf(tot)!==gr)warn.push(fn+' roll '+roll+' '+pc+': total '+tot+' but grade '+gr);
+      got.add(pc);marks.push([col,sc,reg,ses,roll,pc,inc,fin,tot,gr,gp]);
+    });
+    const lost=[...app].filter(p=>!got.has(p));
+    if(lost.length)warn.push(fn+' roll '+roll+': listed but no data on sheet: '+lost.join(', '));
+  }
+  if(priv)warn.push(fn+': '+priv+' students typed “Private Regular” counted as Private (code 4). Please confirm.');
+  return{subj,info,marks,warn};
+}
+
+const cell=v=>v==null?'':String(v);
+const csv=(h,d)=>[h,...d].map(r=>r.map(v=>{const s=cell(v);return /[",\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s}).join(',')).join('\r\n');
+const cnt=(a,f)=>{const m=new Map();a.forEach(x=>{const k=f(x);m.set(k,(m.get(k)||0)+1)});return m};
+const bars=(rows,total)=>rows.map(([l,n,c])=>'<div class="bar '+(c||'')+'"><span>'+esc(l)+'</span><div><i style="width:'+(total?Math.max(n/total*100,n?1:0):0)+'%"></i></div><em>'+n+'</em></div>').join('')||'<p class="note">No data.</p>';
+const tbl=(h,rs,rc=[])=>'<tr>'+h.map((x,i)=>'<th class="'+(rc.includes(i)?'r':'')+'">'+esc(x)+'</th>').join('')+'</tr>'+rs.map(r=>'<tr>'+r.map((v,i)=>'<td class="'+(rc.includes(i)?'r':'')+'">'+esc(cell(v))+'</td>').join('')+'</tr>').join('');
+
+function render(files){
+  const n=INFO.length,subs=[...new Set(INFO.map(r=>r[1]))].map(s=>SN[s]);
+  const cg=INFO.map(r=>r[7]).filter(isN),avg=cg.length?(cg.reduce((a,b)=>a+b,0)/cg.length).toFixed(2):'–';
+  $('kpi').innerHTML=[[n,'Students'],[MARKS.length,'Mark rows'],[subs.join(', ')||'–','Subject'],[avg,'Average CGPA ('+cg.length+' students)'],[WARN.length,'Items to check']].map(([a,b])=>'<div><strong>'+esc(a)+'</strong><span>'+esc(b)+'</span></div>').join('');
+  const rs=cnt(INFO,r=>r[8]||'No result yet');
+  const col={Passed:'var(--ac)',Failed:'var(--bad)',Absent:'var(--wn)'},rl=[...rs].sort((a,b)=>b[1]-a[1]);let acc=0;
+  const cg2=rl.map(([k,v])=>{const a=acc/n*100;acc+=v;return(col[k]||'var(--mu)')+' '+a+'% '+acc/n*100+'%'}).join(',');
+  const ps=rs.get('Passed')||0,wr=n-(rs.get('No result yet')||0);
+  $('c-res').innerHTML='<div class="res"><div class="donut" style="background:conic-gradient('+cg2+')"><div><strong>'+(wr?Math.round(ps/wr*100)+'%':'–')+'</strong><span>'+(wr?'passed':'no results yet')+'</span></div></div><ul class="lg">'+rl.map(([k,v])=>'<li><i class="dot" style="background:'+(col[k]||'var(--mu)')+'"></i>'+esc(k)+'<b>'+v+'</b></li>').join('')+'</ul></div>';
+  const ty=cnt(INFO,r=>r[6]);
+  $('c-typ').innerHTML=bars([...ty].sort((a,b)=>a[0]-b[0]).map(([k,v])=>[k+' – '+TN[k],v]),n);
+  const gc=cnt(MARKS,r=>r[9]||'None');
+  $('c-gr').innerHTML=bars(GR.filter(g=>gc.has(g)).map(g=>[g,gc.get(g),g==='F'?'f':g==='Abs'?'a':'']),MARKS.length);
+  const pp=new Map();
+  MARKS.forEach(r=>{const k=SN[r[1]]+' '+r[5],o=pp.get(k)||[0,0,0];o[0]++;if(r[9]==='Abs')o[1]++;else if(r[9]==='F')o[2]++;pp.set(k,o)});
+  $('t-pap').innerHTML=tbl(['Paper','Appeared','Absent','Failed','Pass rate'],[...pp].map(([k,[a,b,c]])=>{const s=a-b;return[k,a,b,c,s?Math.round((s-c)/s*100)+'%':'–']}),[1,2,3,4]);
+  const cl=new Map();
+  INFO.forEach(r=>{const o=cl.get(r[0])||[0,0,0,0,0];o[0]++;const i={Passed:1,Failed:2,Absent:3}[r[8]]||4;o[i]++;cl.set(r[0],o)});
+  $('t-col').innerHTML=tbl(['College code','Students','Passed','Failed','Absent','No result'],[...cl].sort((a,b)=>a[0]-b[0]).map(([k,o])=>[k,...o]),[1,2,3,4,5]);
+  $('wsum').textContent=WARN.length?WARN.length+' items to check':'Nothing to check. All rows look consistent.';
+  $('wl').innerHTML=WARN.map(w=>'<li>'+esc(w)+'</li>').join('');$('wbox').open=false;
+  preview();$('out').hidden=false;
+  $('bi').hidden=$('bm').hidden=!dl;$('dn').hidden=!!dl;
+}
+function preview(){
+  $('pi').setAttribute('aria-pressed',view==='i');$('pm').setAttribute('aria-pressed',view==='m');
+  $('t-pre').innerHTML=view==='i'?tbl(HI,INFO.slice(0,100)):tbl(HM,MARKS.slice(0,100));
+}
+$('pi').onclick=()=>{view='i';preview()};$('pm').onclick=()=>{view='m';preview()};
+async function save(kind){
+  const subs=[...new Set(INFO.map(r=>r[1]))],pre=subs.length===1?SN[subs[0]].replace(/\W+/g,'_')+'_':'';
+  const i=kind==='i';
+  try{await dl.save({filename:pre+(i?'Info':'Marks')+'.csv',data:'\ufeff'+csv(i?HI:HM,i?INFO:MARKS)})}
+  catch(e){if(e&&e.code!=='declined')alert('Could not save the file ('+(e.code||e.message)+').')}
+}
+$('bi').onclick=()=>save('i');$('bm').onclick=()=>save('m');
+$('inp').onchange=async e=>{
+  const fs=[...e.target.files];if(!fs.length)return;
+  INFO=[];MARKS=[];WARN=[];const box=$('files');box.hidden=false;box.innerHTML='';
+  const seen=new Set();
+  for(const f of fs){
+    const p=document.createElement('p');
+    try{
+      const wb=XLSX.read(await f.arrayBuffer(),{type:'array'}),sn=wb.SheetNames[0];
+      const r=parse(f.name,wb.Sheets[sn],sn);
+      if(r.error){p.className='er';p.textContent=f.name+': '+r.error}
+      else{
+        r.info.forEach((x,i)=>{const k=x[1]+'|'+x[4]+'|'+x[2];if(seen.has(k))WARN.push(f.name+': roll '+x[4]+' already loaded from another file');seen.add(k)});
+        INFO.push(...r.info);MARKS.push(...r.marks);WARN.push(...r.warn);
+        p.className='ok';p.textContent=f.name+': '+r.subj+', '+r.info.length+' students, '+r.marks.length+' mark rows';
+      }
+    }catch(err){p.className='er';p.textContent=f.name+': could not read this file ('+err.message+')'}
+    box.appendChild(p);
+  }
+  if(INFO.length)render(fs);else $('out').hidden=true;
+};
+(async()=>{try{dl=window.claude?await claude.use('downloads'):null}catch(e){dl=null}if(!INFO.length)return;$('bi').hidden=$('bm').hidden=!dl;$('dn').hidden=!!dl})();
+</script>
+</body>
+</html>
