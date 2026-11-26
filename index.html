@@ -96,6 +96,7 @@ const sessionOf=v=>{const s=norm(v),m=s.match(/\b\d{4}\s*[-/]\s*(\d{2}|\d{4})\b/
 const isN=v=>typeof v==='number';
 const num=v=>{if(v==null)return null;if(isN(v))return v;const s=String(v).trim();if(s==='')return null;const f=Number(s);return Number.isNaN(f)?s:f};
 const cgpaOf=v=>{const n=num(v);return typeof n==='number'?n.toFixed(2):n};
+const gradePointOf=cgpaOf;
 const isAb=v=>typeof v==='string'&&['ab','abs'].includes(v.trim().toLowerCase());
 const gradeOf=t=>{for(const[lo,g]of[[80,'A+'],[75,'A'],[70,'A-'],[65,'B+'],[60,'B'],[55,'B-'],[50,'C+'],[45,'C'],[40,'D']])if(t>=lo)return g;return 'F'};
 let INFO=[],MARKS=[],WARN=[],dl=null,view='i';
@@ -145,10 +146,10 @@ function parse(fn,ws,sheetName){
         inc=g('In-course 20');fin=g('Course Final 80');tot=g('Total 100');gr=g('Grade');gp=g('Grade Point');
         if(isAb(inc)){warn.push(fn+' roll '+roll+' '+pc+': incourse was Ab, left blank');inc=null}
         if(isAb(fin))fin=null;
-        inc=num(inc);fin=num(fin);tot=num(tot);gp=num(gp);
+        inc=num(inc);fin=num(fin);tot=num(tot);gp=gradePointOf(gp);
       }else{
         const mk=Object.keys(lab).find(k=>k.startsWith('Marks'));
-        tot=g(mk);gr=g('Grade');gp=num(g('Grade Point'));
+        tot=g(mk);gr=g('Grade');gp=gradePointOf(g('Grade Point'));
         tot=(isAb(tot)||tot==='')?null:num(tot);
       }
       gr=gr==null||gr===''?null:norm(gr);
