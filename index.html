@@ -121,7 +121,7 @@ function parse(fn,ws,sheetName){
   const sc=SUBJ[subj];
   const H=rows[hdr].map((c,i)=>[norm(c),i]).filter(x=>x[0]);
   const find=rx=>{const h=H.find(([n])=>rx.test(n));return h?h[1]:-1};
-  const cC=find(/^(du )?regi(\.|stration)( no\.?)?$/i),cS=find(/^session$/i),cR=find(/^(exam\. )?roll( no\.)?$/i),cN=find(/^name of examinee$/i),cT=find(/^(regular\/ ?irregular|type)$/i),cA=find(/^appearing paper/i),cG=find(/^gpa$/i),cX=find(/^results$/i);
+  const cC=find(/^(du )?regi(\.|stration)( no\.?)?$/i),cS=find(/^session$/i),cR=find(/^(exam\. )?roll( no\.)?$/i),cN=find(/^name of examinee$/i),cT=find(/^(regular\/ ?irregular|student\s+type|type)$/i),cA=find(/^appearing paper/i),cG=find(/^gpa$/i),cX=find(/^results$/i);
   const miss=[['Registration',cC],['Session',cS],['Roll',cR],['Name',cN],['Type',cT],['Appearing Paper',cA]].filter(x=>x[1]<0).map(x=>x[0]);
   if(miss.length)return{error:'Missing columns: '+miss.join(', ')};
   const codePart=/^(in[- ]?course|course final|total|grade|grade point|results|total grade point earned|paper code)/i;
