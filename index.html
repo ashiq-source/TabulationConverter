@@ -192,7 +192,7 @@ function render(files){
   $('wsum').textContent=WARN.length?WARN.length+' items to check':'Nothing to check. All rows look consistent.';
   $('wl').innerHTML=WARN.map(w=>'<li>'+esc(w)+'</li>').join('');$('wbox').open=false;
   preview();$('out').hidden=false;
-  $('bi').hidden=$('bm').hidden=!dl;$('dn').hidden=!!dl;
+  $('bi').hidden=$('bm').hidden=false;$('dn').hidden=true;
 }
 function preview(){
   $('pi').setAttribute('aria-pressed',view==='i');$('pm').setAttribute('aria-pressed',view==='m');
@@ -201,9 +201,14 @@ function preview(){
 $('pi').onclick=()=>{view='i';preview()};$('pm').onclick=()=>{view='m';preview()};
 async function save(kind){
   const subs=[...new Set(INFO.map(r=>r[1]))],pre=subs.length===1?SN[subs[0]].replace(/\W+/g,'_')+'_':'';
-  const i=kind==='i';
-  try{await dl.save({filename:pre+(i?'Info':'Marks')+'.csv',data:'\ufeff'+csv(i?HI:HM,i?INFO:MARKS)})}
-  catch(e){if(e&&e.code!=='declined')alert('Could not save the file ('+(e.code||e.message)+').')}
+  const i=kind==='i',filename=pre+(i?'Info':'Marks')+'.csv',data='\ufeff'+csv(i?HI:HM,i?INFO:MARKS);
+  if(dl){
+    try{await dl.save({filename,data});return}
+    catch(e){if(e&&e.code!=='declined')alert('Could not save the file ('+(e.code||e.message)+').');return}
+  }
+  const url=URL.createObjectURL(new Blob([data],{type:'text/csv;charset=utf-8'}));
+  const a=document.createElement('a');a.href=url;a.download=filename;a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 $('bi').onclick=()=>save('i');$('bm').onclick=()=>save('m');$('pbi').onclick=()=>save('i');$('pbm').onclick=()=>save('m');
 $('inp').onchange=async e=>{
