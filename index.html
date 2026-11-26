@@ -106,7 +106,8 @@ function parse(fn,ws,sheetName){
   const warn=[],info=[],marks=[],seen=new Set();
   const rg=XLSX.utils.decode_range(ws['!ref']);
   const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null,blankrows:true,range:'A1:'+XLSX.utils.encode_cell(rg.e)});
-  const hdr=rows.findIndex(r=>r.some(c=>typeof c==='string'&&c.trim().startsWith('Paper Code:')));
+  const isPaperCode=n=>/^paper\s*code\s*:/i.test(n),paperCodeOf=n=>n.replace(/^paper\s*code\s*:\s*/i,'').trim();
+  const hdr=rows.findIndex(r=>r.some(c=>typeof c==='string'&&isPaperCode(norm(c))));
   if(hdr<0)return{error:'No header row with “Paper Code:” found.'};
   let subj=null;
   for(let i=0;i<=hdr;i++)for(const c of rows[i])if(typeof c==='string'&&c.trim().startsWith('Subject :'))subj=c.split(':').slice(1).join(':').replace(/\s*\([^)]*\)\s*$/,'').trim();
@@ -123,7 +124,7 @@ function parse(fn,ws,sheetName){
   const cC=find(/^(du )?regi(\.|stration)( no\.?)?$/i),cS=find(/^session$/i),cR=find(/^(exam\. )?roll( no\.)?$/i),cN=find(/^name of examinee$/i),cT=find(/^(regular\/ ?irregular|type)$/i),cA=find(/^appearing paper/i),cG=find(/^gpa$/i),cX=find(/^results$/i);
   const miss=[['Registration',cC],['Session',cS],['Roll',cR],['Name',cN],['Type',cT],['Appearing Paper',cA]].filter(x=>x[1]<0).map(x=>x[0]);
   if(miss.length)return{error:'Missing columns: '+miss.join(', ')};
-  const blocks=H.filter(([n])=>n.startsWith('Paper Code:')).map(([n,c])=>[n.replace(/^Paper Code:\s*/,'').split(' ')[0],c]).sort((a,b)=>a[1]-b[1]);
+  const blocks=H.filter(([n])=>isPaperCode(n)).map(([n,c])=>[paperCodeOf(n),c]).sort((a,b)=>a[1]-b[1]);
   const tail=Math.min(...H.filter(([n])=>/^(Total Grade Point Earned|Results)$/i.test(n)).map(x=>x[1]));
   const ends=blocks.slice(1).map(b=>b[1]).concat([tail]);
   const sub=hdr+3;let priv=0;
@@ -137,7 +138,7 @@ function parse(fn,ws,sheetName){
     if(seen.has(key))warn.push(fn+' row '+(i+1)+': duplicate roll '+roll);seen.add(key);
     const res=cX>=0?r[cX]:null;
     info.push([col,sc,reg,ses,roll,norm(name),TYPE[typ],cG>=0?cgpaOf(r[cG]):null,res==null||res===''?null:norm(res)]);
-    const app=new Set(String(r[cA]||'').split(/\s+/).filter(Boolean)),got=new Set();
+    const appText=norm(r[cA]||'').toLowerCase(),got=new Set(),isListed=pc=>{const p=norm(pc).toLowerCase();return p&&new RegExp('(^|[^a-z0-9])'+p.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'($|[^a-z0-9])','i').test(appText)};
     blocks.forEach(([pc,c0],bi)=>{
       const lab={};for(let c=c0;c<ends[bi];c++){const v=rows[sub][c];if(v!=null&&v!=='')lab[norm(v)]=c}
       const g=l=>l in lab?r[lab[l]]:null;
@@ -156,13 +157,13 @@ function parse(fn,ws,sheetName){
       gr=gr==null||gr===''?null:norm(gr);
       if(!th){inc=fin=(tot!=null||gr!=null)?0:null}
       const real=th?(isN(fin)||isN(inc)):isN(tot);
-      if(!app.has(pc)&&!real){warn.push(fn+' roll '+roll+' '+pc+': only stray cells and paper not in Appearing list, dropped');return}
-      if(!app.has(pc))warn.push(fn+' roll '+roll+' '+pc+': has marks but paper not in Appearing list, kept');
+      if(!isListed(pc)&&!real){warn.push(fn+' roll '+roll+' '+pc+': only stray cells and paper not in Appearing list, dropped');return}
+      if(!isListed(pc))warn.push(fn+' roll '+roll+' '+pc+': has marks but paper not in Appearing list, kept');
       if(th&&isN(inc)&&isN(fin)&&isN(tot)&&inc+fin!==tot)warn.push(fn+' roll '+roll+' '+pc+': '+inc+'+'+fin+' is not '+tot);
       if(th&&isN(tot)&&gr&&gr!=='Abs'&&gradeOf(tot)!==gr)warn.push(fn+' roll '+roll+' '+pc+': total '+tot+' but grade '+gr);
       got.add(pc);marks.push([col,sc,reg,ses,roll,pc,inc,fin,tot,gr,gp]);
     });
-    const lost=[...app].filter(p=>!got.has(p));
+    const lost=blocks.map(([pc])=>pc).filter(pc=>isListed(pc)&&!got.has(pc));
     if(lost.length)warn.push(fn+' roll '+roll+': listed but no data on sheet: '+lost.join(', '));
   }
   if(priv)warn.push(fn+': '+priv+' students typed “Private Regular” counted as Private (code 4). Please confirm.');
